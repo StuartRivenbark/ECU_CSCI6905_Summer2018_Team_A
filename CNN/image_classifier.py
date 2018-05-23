@@ -109,6 +109,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 
+import logging
+
 FLAGS = None
 
 MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
@@ -203,7 +205,6 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     }
   return result
 
-
 def get_image_path(image_lists, label_name, index, image_dir, category):
   """Returns a path to an image for a label at the given index.
   Args:
@@ -233,7 +234,6 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
   full_path = os.path.join(image_dir, sub_dir, base_name)
   return full_path
 
-
 def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
                         category, module_name):
   """Returns a path to a bottleneck file for a label at the given index.
@@ -255,7 +255,6 @@ def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
   return get_image_path(image_lists, label_name, index, bottleneck_dir,
                         category) + '_' + module_name + '.txt'
 
-
 def create_module_graph(module_spec):
   """Creates a graph and loads Hub Module into it.
   Args:
@@ -275,7 +274,6 @@ def create_module_graph(module_spec):
     wants_quantization = any(node.op in FAKE_QUANT_OPS
                              for node in graph.as_graph_def().node)
   return graph, bottleneck_tensor, resized_input_tensor, wants_quantization
-
 
 def run_bottleneck_on_image(sess, image_data, image_data_tensor,
                             decoded_image_tensor, resized_input_tensor,
@@ -300,7 +298,6 @@ def run_bottleneck_on_image(sess, image_data, image_data_tensor,
   bottleneck_values = np.squeeze(bottleneck_values)
   return bottleneck_values
 
-
 def ensure_dir_exists(dir_name):
   """Makes sure the folder exists on disk.
   Args:
@@ -308,7 +305,6 @@ def ensure_dir_exists(dir_name):
   """
   if not os.path.exists(dir_name):
     os.makedirs(dir_name)
-
 
 def create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
                            image_dir, category, sess, jpeg_data_tensor,
@@ -331,7 +327,6 @@ def create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
   bottleneck_string = ','.join(str(x) for x in bottleneck_values)
   with open(bottleneck_path, 'w') as bottleneck_file:
     bottleneck_file.write(bottleneck_string)
-
 
 def get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir,
                              category, bottleneck_dir, jpeg_data_tensor,
@@ -390,7 +385,6 @@ def get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir,
     bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
   return bottleneck_values
 
-
 def cache_bottlenecks(sess, image_lists, image_dir, bottleneck_dir,
                       jpeg_data_tensor, decoded_image_tensor,
                       resized_input_tensor, bottleneck_tensor, module_name):
@@ -430,7 +424,6 @@ def cache_bottlenecks(sess, image_lists, image_dir, bottleneck_dir,
         if how_many_bottlenecks % 100 == 0:
           tf.logging.info(
               str(how_many_bottlenecks) + ' bottleneck files created.')
-
 
 def get_random_cached_bottlenecks(sess, image_lists, how_many, category,
                                   bottleneck_dir, image_dir, jpeg_data_tensor,
@@ -494,7 +487,6 @@ def get_random_cached_bottlenecks(sess, image_lists, how_many, category,
         filenames.append(image_name)
   return bottlenecks, ground_truths, filenames
 
-
 def get_random_distorted_bottlenecks(
     sess, image_lists, how_many, category, image_dir, input_jpeg_tensor,
     distorted_image, resized_input_tensor, bottleneck_tensor):
@@ -543,7 +535,6 @@ def get_random_distorted_bottlenecks(
     ground_truths.append(label_index)
   return bottlenecks, ground_truths
 
-
 def should_distort_images(flip_left_right, random_crop, random_scale,
                           random_brightness):
   """Whether any distortions are enabled, from the input flags.
@@ -558,7 +549,6 @@ def should_distort_images(flip_left_right, random_crop, random_scale,
   """
   return (flip_left_right or (random_crop != 0) or (random_scale != 0) or
           (random_brightness != 0))
-
 
 def add_input_distortions(flip_left_right, random_crop, random_scale,
                           random_brightness, module_spec):
@@ -643,7 +633,6 @@ def add_input_distortions(flip_left_right, random_crop, random_scale,
   distort_result = tf.expand_dims(brightened_image, 0, name='DistortResult')
   return jpeg_data, distort_result
 
-
 def variable_summaries(var):
   """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
   with tf.name_scope('summaries'):
@@ -655,7 +644,6 @@ def variable_summaries(var):
     tf.summary.scalar('max', tf.reduce_max(var))
     tf.summary.scalar('min', tf.reduce_min(var))
     tf.summary.histogram('histogram', var)
-
 
 def add_final_retrain_ops(class_count, final_tensor_name, bottleneck_tensor,
                           quantize_layer, is_training):
@@ -737,7 +725,6 @@ def add_final_retrain_ops(class_count, final_tensor_name, bottleneck_tensor,
   return (train_step, cross_entropy_mean, bottleneck_input, ground_truth_input,
           final_tensor)
 
-
 def add_evaluation_step(result_tensor, ground_truth_tensor):
   """Inserts the operations we need to evaluate the accuracy of our results.
   Args:
@@ -755,7 +742,6 @@ def add_evaluation_step(result_tensor, ground_truth_tensor):
       evaluation_step = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
   tf.summary.scalar('accuracy', evaluation_step)
   return evaluation_step, prediction
-
 
 def run_final_eval(train_session, module_spec, class_count, image_lists,
                    jpeg_data_tensor, decoded_image_tensor,
@@ -797,7 +783,6 @@ def run_final_eval(train_session, module_spec, class_count, image_lists,
         tf.logging.info('%70s  %s' % (test_filename,
                                       list(image_lists.keys())[predictions[i]]))
 
-
 def build_eval_session(module_spec, class_count):
   """Builds an restored eval session without train operations for exporting.
   Args:
@@ -829,7 +814,6 @@ def build_eval_session(module_spec, class_count):
   return (eval_sess, resized_input_tensor, bottleneck_input, ground_truth_input,
           evaluation_step, prediction)
 
-
 def save_graph_to_file(graph, graph_file_name, module_spec, class_count):
   """Saves an graph to file, creating a valid quantized one if necessary."""
   sess, _, _, _, _, _ = build_eval_session(module_spec, class_count)
@@ -841,7 +825,6 @@ def save_graph_to_file(graph, graph_file_name, module_spec, class_count):
   with tf.gfile.FastGFile(graph_file_name, 'wb') as f:
     f.write(output_graph_def.SerializeToString())
 
-
 def prepare_file_system():
   # Set up the directory we'll write summaries to for TensorBoard
   if tf.gfile.Exists(FLAGS.summaries_dir):
@@ -850,7 +833,6 @@ def prepare_file_system():
   if FLAGS.intermediate_store_frequency > 0:
     ensure_dir_exists(FLAGS.intermediate_output_graphs_dir)
   return
-
 
 def add_jpeg_decoding(module_spec):
   """Adds operations that perform JPEG decoding and resizing to the graph..
@@ -873,7 +855,6 @@ def add_jpeg_decoding(module_spec):
   resized_image = tf.image.resize_bilinear(decoded_image_4d,
                                            resize_shape_as_int)
   return jpeg_data, resized_image
-
 
 def export_model(module_spec, class_count, saved_model_dir):
   """Exports model for serving.
@@ -916,6 +897,20 @@ def export_model(module_spec, class_count, saved_model_dir):
 def main(_):
   # Needed to make sure the logging output is visible.
   # See https://github.com/tensorflow/tensorflow/issues/3047
+
+  # get TF logger
+  log = logging.getLogger('tensorflow')
+  log.setLevel(logging.DEBUG)
+
+  # create formatter and add it to the handlers
+  formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+  # create file handler which logs even debug messages
+  fh = logging.FileHandler('tensorflow.log')
+  fh.setLevel(logging.DEBUG)
+  fh.setFormatter(formatter)
+  log.addHandler(fh)
+
   tf.logging.set_verbosity(tf.logging.INFO)
 
   if not FLAGS.image_dir:
@@ -1084,7 +1079,6 @@ def main(_):
 
     if FLAGS.saved_model_dir:
       export_model(module_spec, class_count, FLAGS.saved_model_dir)
-
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
