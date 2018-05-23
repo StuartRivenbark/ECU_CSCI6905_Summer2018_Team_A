@@ -1080,6 +1080,10 @@ def main(_):
     if FLAGS.saved_model_dir:
       export_model(module_spec, class_count, FLAGS.saved_model_dir)
 
+    print("tf.trainable_variables():")
+    print("=========================")
+    print(tf.trainable_variables())
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
