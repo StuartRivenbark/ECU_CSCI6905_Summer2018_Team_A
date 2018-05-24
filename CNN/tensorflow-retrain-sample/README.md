@@ -20,17 +20,26 @@ python retrain.py \
   --output_graph=retrained_graph.pb \
   --output_labels=retrained_labels.txt \
   --image_dir=categories
+  
+  or 
+  
+  python retrain.py --bottleneck_dir=bottlenecks --how_many_training_steps=500 --model_dir=inception --summaries_dir=training_summaries/basic --output_graph=retrained_graph.pb --output_labels=retrained_labels.txt --image_dir=categories
 ```
-python retrain.py --bottleneck_dir=bottlenecks --how_many_training_steps=500 --model_dir=inception --summaries_dir=training_summaries/basic --output_graph=retrained_graph.pb --output_labels=retrained_labels.txt --image_dir=categories
+
 
 
 ## Predicting
 
 ``` bash
 python label_image.py <insert_file_path_to_predict_here>
-```
+
+or
 
 python label_image.py test/insta_ramen.jpg
+
+```
+
+
 
 ## Visualize
 
