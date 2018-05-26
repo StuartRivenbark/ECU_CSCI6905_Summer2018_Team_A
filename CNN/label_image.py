@@ -15,9 +15,9 @@ print("==========")
 print(sys.argv)
 print("===========")
 if len(sys.argv) > 2:
-    labels_path = "C:/Users/RivenbarkSW/Documents/Python Scripts/TensorFlow/CNNProject/outputlabels/retrained_labels.txt"
+    labels_path = sys.argv[2]
 if len(sys.argv) > 3:
-    graph_path = "C:/Users/RivenbarkSW/Documents/Python Scripts/TensorFlow/CNNProject/outputgraph/retrained_graph.pb"
+    graph_path = sys.argv[3]
 
 print("Using the following arguments:")
 print("=============================")
