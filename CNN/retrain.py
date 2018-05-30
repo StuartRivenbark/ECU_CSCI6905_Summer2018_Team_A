@@ -1,16 +1,3 @@
-# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 # ==============================================================================
 """Simple transfer learning with an Inception v3 architecture model which
 displays summaries in TensorBoard.
@@ -73,6 +60,8 @@ import re
 import struct
 import sys
 import tarfile
+import os
+import shutil
 
 import numpy as np
 from six.moves import urllib
@@ -100,7 +89,6 @@ MODEL_INPUT_DEPTH = 3
 JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'
 RESIZED_INPUT_TENSOR_NAME = 'ResizeBilinear:0'
 MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
-
 
 def create_image_lists(image_dir, testing_percentage, validation_percentage):
   """Builds a list of training images from the file system.
@@ -183,7 +171,6 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     }
   return result
 
-
 def get_image_path(image_lists, label_name, index, image_dir, category):
   """"Returns a path to an image for a label at the given index.
 
@@ -216,7 +203,6 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
   full_path = os.path.join(image_dir, sub_dir, base_name)
   return full_path
 
-
 def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
                         category):
   """"Returns a path to a bottleneck file for a label at the given index.
@@ -235,7 +221,6 @@ def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
   """
   return get_image_path(image_lists, label_name, index, bottleneck_dir,
                         category) + '.txt'
-
 
 def create_inception_graph():
   """"Creates a graph from saved GraphDef file and returns a Graph object.
@@ -256,7 +241,6 @@ def create_inception_graph():
               RESIZED_INPUT_TENSOR_NAME]))
   return sess.graph, bottleneck_tensor, jpeg_data_tensor, resized_input_tensor
 
-
 def run_bottleneck_on_image(sess, image_data, image_data_tensor,
                             bottleneck_tensor):
   """Runs inference on an image to extract the 'bottleneck' summary layer.
@@ -275,7 +259,6 @@ def run_bottleneck_on_image(sess, image_data, image_data_tensor,
       {image_data_tensor: image_data})
   bottleneck_values = np.squeeze(bottleneck_values)
   return bottleneck_values
-
 
 def maybe_download_and_extract():
   """Download and extract model tar file.
@@ -304,7 +287,6 @@ def maybe_download_and_extract():
     print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
   tarfile.open(filepath, 'r:gz').extractall(dest_directory)
 
-
 def ensure_dir_exists(dir_name):
   """Makes sure the folder exists on disk.
 
@@ -313,7 +295,6 @@ def ensure_dir_exists(dir_name):
   """
   if not os.path.exists(dir_name):
     os.makedirs(dir_name)
-
 
 def write_list_of_floats_to_file(list_of_floats , file_path):
   """Writes a given list of floats to a binary file.
@@ -328,7 +309,6 @@ def write_list_of_floats_to_file(list_of_floats , file_path):
   with open(file_path, 'wb') as f:
     f.write(s)
 
-
 def read_list_of_floats_from_file(file_path):
   """Reads list of floats from a given file.
 
@@ -342,7 +322,6 @@ def read_list_of_floats_from_file(file_path):
   with open(file_path, 'rb') as f:
     s = struct.unpack('d' * BOTTLENECK_TENSOR_SIZE, f.read())
     return list(s)
-
 
 bottleneck_path_2_bottleneck_values = {}
 
@@ -443,7 +422,6 @@ def cache_bottlenecks(sess, image_lists, image_dir, bottleneck_dir,
         if how_many_bottlenecks % 100 == 0:
           print(str(how_many_bottlenecks) + ' bottleneck files created.')
 
-
 def get_random_cached_bottlenecks(sess, image_lists, how_many, category,
                                   bottleneck_dir, image_dir, jpeg_data_tensor,
                                   bottleneck_tensor):
@@ -509,7 +487,6 @@ def get_random_cached_bottlenecks(sess, image_lists, how_many, category,
         filenames.append(image_name)
   return bottlenecks, ground_truths, filenames
 
-
 def get_random_distorted_bottlenecks(
     sess, image_lists, how_many, category, image_dir, input_jpeg_tensor,
     distorted_image, resized_input_tensor, bottleneck_tensor):
@@ -563,7 +540,6 @@ def get_random_distorted_bottlenecks(
     ground_truths.append(ground_truth)
   return bottlenecks, ground_truths
 
-
 def should_distort_images(flip_left_right, random_crop, random_scale,
                           random_brightness):
   """Whether any distortions are enabled, from the input flags.
@@ -580,7 +556,6 @@ def should_distort_images(flip_left_right, random_crop, random_scale,
   """
   return (flip_left_right or (random_crop != 0) or (random_scale != 0) or
           (random_brightness != 0))
-
 
 def add_input_distortions(flip_left_right, random_crop, random_scale,
                           random_brightness):
@@ -670,7 +645,6 @@ def add_input_distortions(flip_left_right, random_crop, random_scale,
   distort_result = tf.expand_dims(brightened_image, 0, name='DistortResult')
   return jpeg_data, distort_result
 
-
 def variable_summaries(var):
   """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
   with tf.name_scope('summaries'):
@@ -682,7 +656,6 @@ def variable_summaries(var):
     tf.summary.scalar('max', tf.reduce_max(var))
     tf.summary.scalar('min', tf.reduce_min(var))
     tf.summary.histogram('histogram', var)
-
 
 def add_final_training_ops(class_count, final_tensor_name, bottleneck_tensor):
   """Adds a new softmax and fully-connected layer for training.
@@ -744,7 +717,6 @@ def add_final_training_ops(class_count, final_tensor_name, bottleneck_tensor):
   return (train_step, cross_entropy_mean, bottleneck_input, ground_truth_input,
           final_tensor)
 
-
 def add_evaluation_step(result_tensor, ground_truth_tensor):
   """Inserts the operations we need to evaluate the accuracy of our results.
 
@@ -766,8 +738,37 @@ def add_evaluation_step(result_tensor, ground_truth_tensor):
   tf.summary.scalar('accuracy', evaluation_step)
   return evaluation_step, prediction
 
-
 def main(_):
+  # Cleanup all data out of output directories:
+  if os.path.exists(FLAGS.bottleneck_dir):
+    for root, dirs, files in os.walk(FLAGS.bottleneck_dir):
+      for f in files:
+        #print("delete {0}".format(os.path.join(root, f)))
+        os.unlink(os.path.join(root, f))
+      for d in dirs:
+        #print("delete {0}".format(os.path.join(root, d)))
+        shutil.rmtree(os.path.join(root, d))
+  
+  if os.path.exists(FLAGS.model_dir):
+    for root, dirs, files in os.walk(FLAGS.model_dir):
+      for f in files:
+        #print("delete {0}".format(os.path.join(root, f)))
+        os.unlink(os.path.join(root, f))
+      for d in dirs:
+        #print("delete {0}".format(os.path.join(root, d)))
+        shutil.rmtree(os.path.join(root, d))
+
+  if os.path.exists(FLAGS.output_graph):
+    #print("delete {0}".format(FLAGS.output_graph))
+    os.unlink(os.path.join(root, FLAGS.output_graph))
+
+  if os.path.exists(FLAGS.output_labels):
+    #print("delete {0}".format(FLAGS.output_labels))
+    os.unlink(os.path.join(root, FLAGS.output_labels))
+
+  # sys.exit()
+
+
   # Setup the directory we'll write summaries to for TensorBoard
   if tf.gfile.Exists(FLAGS.summaries_dir):
     tf.gfile.DeleteRecursively(FLAGS.summaries_dir)
@@ -903,7 +904,6 @@ def main(_):
     f.write(output_graph_def.SerializeToString())
   with gfile.FastGFile(FLAGS.output_labels, 'w') as f:
     f.write('\n'.join(image_lists.keys()) + '\n')
-
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
