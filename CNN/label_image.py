@@ -19,7 +19,7 @@ if len(sys.argv) > 2:
 if len(sys.argv) > 3:
     graph_path = sys.argv[3]
 
-print("Using the following arguments:")
+#print("Using the following arguments:")
 print("=============================")
 print("image  path = {0}".format(image_path))
 print("labels path = {0}".format(labels_path))
