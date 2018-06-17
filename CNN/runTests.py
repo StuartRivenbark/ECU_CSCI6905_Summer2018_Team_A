@@ -1,5 +1,5 @@
 import os, sys, argparse, subprocess
-logfile = open('TestResults.txt', 'a+')
+logfile = open('CNN_TestResults.txt', 'a+')
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"]="2"
 
