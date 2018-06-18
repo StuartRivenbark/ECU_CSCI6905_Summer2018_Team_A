@@ -824,6 +824,16 @@ def main(_):
                                        sess.graph)
   validation_writer = tf.summary.FileWriter(FLAGS.summaries_dir + '/validation')
 
+  print("===================================================================")
+  print("ECU CSCI6905 Summer 2018 Team A CNN Retraining Process Parameters: ")
+  print("image      path = {0}".format(FLAGS.image_dir))
+  print("summaries  path = {0}".format(FLAGS.summaries_dir))
+  print("labels     path = {0}".format(FLAGS.output_labels))
+  print("graph      path = {0}".format(FLAGS.output_graph))
+  print("bottleneck path = {0}".format(FLAGS.bottleneck_dir))
+
+  print("===================================================================")
+
   # Set up all our weights to their initial default values.
   init = tf.global_variables_initializer()
   sess.run(init)

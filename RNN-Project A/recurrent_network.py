@@ -12,14 +12,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow.contrib import rnn
-import os, sys, argparse, subprocess
 
 # Import MNIST data
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
-
-#initialize output log
-logfile = open('recurrent_network_Results.txt', 'a+')
 
 '''
 To classify images using a recurrent neural network, we consider every image
@@ -31,7 +27,7 @@ handle 28 sequences of 28 steps for every sample.
 learning_rate = 0.001
 training_steps = 10000
 batch_size = 128
-display_step = 400
+display_step = 200
 
 # Network Parameters
 num_input = 28 # MNIST data input (img shape: 28*28)
@@ -50,13 +46,20 @@ weights = {
 biases = {
     'out': tf.Variable(tf.random_normal([num_classes]))
 }
-#custom logger
-def log(msg):
-	print(msg)
-	sys.stdout.flush()
-	logfile.write(str(msg) + '\n')
-	logfile.flush()
-	
+
+print("=======================================================================")
+print("ECU CSCI6905 Summer 2018 Team A RNN MNIST Training Process Parameters: ")
+print("Learning Rate =          {0}".format(learning_rate))
+print("Training Steps =         {0}".format(training_steps))
+print("Batch Size =             {0}".format(batch_size))
+print("Skip Steps for Display = {0}".format(display_step))
+print("Image Shape (Pixels) =   {0}".format(num_input))
+print("Timesteps =              {0}".format(timesteps))
+print("Hidden Layers Features = {0}".format(num_hidden))
+print("MNIST Total Classes =    {0}".format(num_classes))
+
+print("======================================================================")
+
 def RNN(x, weights, biases):
 
     # Prepare data shape to match `rnn` function requirements
@@ -107,14 +110,15 @@ with tf.Session() as sess:
             # Calculate batch loss and accuracy
             loss, acc = sess.run([loss_op, accuracy], feed_dict={X: batch_x,
                                                                  Y: batch_y})
-            log("Step " + str(step) + ", Minibatch Loss= " + \
+            print("Step " + str(step) + ", Minibatch Loss= " + \
                   "{:.4f}".format(loss) + ", Training Accuracy= " + \
                   "{:.3f}".format(acc))
 
-    log("Optimization Finished!")
+    print("Optimization Finished!")
 
     # Calculate accuracy for 128 mnist test images
     test_len = 128
     test_data = mnist.test.images[:test_len].reshape((-1, timesteps, num_input))
     test_label = mnist.test.labels[:test_len]
-    log("Testing Accuracy: " + str(sess.run(accuracy, feed_dict={X: test_data, Y: test_label})))
+    print("Testing Accuracy:", \
+        sess.run(accuracy, feed_dict={X: test_data, Y: test_label}))
